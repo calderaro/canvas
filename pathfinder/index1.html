@@ -1,0 +1,242 @@
+<html>
+  <body>
+    <script type="text/javascript" src='../lodash4fp.js'></script>
+    <script type="text/javascript">
+      const state = { path: [], x: 0, y: 0, vy: 0, vy: 0 }
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      canvas.width = 3200
+      canvas.height = 3200
+      canvas.style.width = 500
+      canvas.style.height = 500
+      document.body.appendChild(canvas)
+
+      const mesh = function (w, h, nd) {
+        this.vertices = []
+        this.width = w
+        this.height = h
+        this.nodeDimesion = nd
+        for(let y = 0; y <= this.height - 1; y++) {
+          for(let x = 0; x <= this.width - 1; x++) {
+            let walkable = Math.random() >= 0.01
+            const v1 = { index: x + this.width * y, x: x, y: y, walkable: walkable }
+            this.vertices.push(v1)
+          }
+        }
+        for(let y = 0; y < this.height; y++) {
+          for(let x = 0; x < this.width; x++) {
+            const x0 = this.vertices[x + this.width * y]
+            const x1 = this.vertices[(x + 1) + this.width * y] || null
+            const x2 = this.vertices[(x) + this.width * (y - 1)] || null
+            const x3 = this.vertices[(x) + this.width * (y + 1)] || null
+            const x4 = this.vertices[(x - 1) + this.width * y] || null
+            const x5 = this.vertices[(x - 1) + this.width * (y - 1)] || null
+            const x6 = this.vertices[(x + 1) + this.width * (y + 1)] || null
+            const x7 = this.vertices[(x - 1) + this.width * (y + 1)] || null
+            const x8 = this.vertices[(x + 1) + this.width * (y - 1)] || null
+            const neighbors = []
+
+            if (x2) {
+              neighbors.push((x) + this.width * (y - 1))
+            }
+            if (x1 && x !== this.width - 1) {
+              neighbors.push((x + 1) + this.width * y)
+            }
+            if (x4 && x !== 0) {
+              neighbors.push((x - 1) + this.width * y)
+            }
+            if (x3) {
+              neighbors.push((x) + this.width * (y + 1))
+            }
+            if (x5 && x !== 0) {
+              neighbors.push((x - 1) + this.width * (y - 1))
+            }
+            if (x6 && x !== this.width - 1) {
+              neighbors.push((x + 1) + this.width * (y + 1))
+            }
+            if (x7 && x !== 0) {
+              neighbors.push((x - 1) + this.width * (y + 1))
+            }
+            if (x8 && x !== this.width - 1) {
+              neighbors.push((x + 1) + this.width * (y - 1))
+            }
+            if (neighbors.length) {
+              this.vertices[x + this.width * y].neighbors = neighbors
+            }
+          }
+        }
+      }
+
+      const center = [14,14]
+      const mesh1 = new mesh(100, 100, 32)
+      const playerInitialPosition = mesh1.vertices.filter(v => v.walkable)[0]
+      state.x = playerInitialPosition.x
+      state.y = playerInitialPosition.y
+      let period = 0
+      let speed = 300
+      function find() {
+        state.to = null
+        while (!state.to) {
+          const x = parseInt(Math.random() * (60 - 5) + 60)
+          const y = parseInt(Math.random() * (60 - 5) + 60)
+          const v = mesh1.vertices[x + mesh1.width * y]
+          if (v && v.walkable) {
+            state.to = { x: x, y: y }
+          }
+        }
+        state.path = findPath({ from: { x: state.x, y: state.y }, to: state.to, mesh: mesh1 })
+      }
+
+      function draw (delta) {
+        if(delta >= period) {
+          find()
+          period = delta + 2000
+        }
+
+        if(delta >= speed) {
+          if (state.path.length) {
+            const v = mesh1.vertices[state.path.pop()]
+            state.x = v.x
+            state.y = v.y
+          }
+          period = delta + 2000
+        }
+
+
+        ctx.clearRect(0, 0, 640, 640)
+        ctx.fillStyle = 'black'
+        ctx.fillRect(0, 0, 640, 640)
+
+        mesh1.vertices.forEach(v => {
+          if (v.walkable) {
+            ctx.fillStyle = '#088A08'
+            ctx.fillRect(v.x * 32, v.y * 32, 32, 32)
+          } else {
+            ctx.fillStyle = 'grey'
+            ctx.fillRect(v.x * 32, v.y * 32, 32, 32)
+          }
+        })
+
+        state.path.forEach((v, i) => {
+          ctx.fillStyle = 'blue'
+          ctx.fillRect(mesh1.vertices[v].x * 32, mesh1.vertices[v].y * 32, 32, 32)
+          /*
+          ctx.fillStyle = 'black'
+          ctx.fillText(i, mesh1.vertices[v].x * 32 + 16, mesh1.vertices[v].y * 32 + 16)*/
+        })
+
+        if (state.from) {
+          ctx.fillStyle = '#2E9AFE'
+          ctx.fillRect(state.from.x * 32, state.from.y * 32, 32, 32)
+          /*
+          ctx.fillStyle = 'black'
+          ctx.fillText(state.from.x + mesh1.width * state.from.y , state.from.x * 32 + 16, state.from.y * 32 + 16)*/
+        }
+        if (state.to) {
+          ctx.fillStyle = '#FE2E2E'
+          ctx.fillRect(state.to.x * 32, state.to.y * 32, 32, 32)
+          /*
+          ctx.fillStyle = 'black'
+          ctx.fillText(state.to.x + mesh1.width * state.to.y , state.to.x * 32 + 16, state.to.y * 32 + 16)*/
+        }
+
+        ctx.fillStyle = 'black'
+        ctx.fillRect(state.x, state.y, 32, 32)
+
+        requestAnimationFrame(draw)
+      }
+      requestAnimationFrame(draw)
+
+
+      function setMousePos (evt) {
+        const rect = canvas.getBoundingClientRect() // abs. size of element
+        const scaleX = canvas.width / rect.width    // relationship bitmap vs. element for X
+        const scaleY = canvas.height / rect.height  // relationship bitmap vs. element for Y
+
+        state.mouse = {
+          x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
+          y: (evt.clientY - rect.top) * scaleY     // been adjusted to be relative to element
+        }
+      }
+
+      canvas.addEventListener('mousemove', _.throttle(30, setMousePos), false)
+      canvas.addEventListener('click', () => {
+        const x = Math.floor(state.mouse.x / 32)
+        const y = Math.floor(state.mouse.y / 32)
+        if (!mesh1.vertices[x + mesh1.width * y].walkable) return
+        state.to = { x: x , y: y}
+        const t0 = performance.now();
+        state.path = findPath({ from: { x: state.x, y: state.y }, to: state.to, mesh: mesh1})
+        const t1 = performance.now();
+        console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.")
+      }, false)
+
+      function findPath (coords) {
+        const t0 = performance.now();
+        const width = coords.mesh.width
+        const vertices = coords.mesh.vertices
+        const edges = coords.mesh.edges
+        const from2D = coords.from
+        const from1D = from2D.x + width * from2D.y
+        const from = vertices[from1D]
+        const to2D = coords.to
+        const to = vertices[to2D.x + width * to2D.y]
+        let open = []
+        const closed = []
+        let final = null
+        const rute = []
+        const g = mdistance(from, to)
+        let x = 0
+
+        open.push(_.assign(vertices[from1D], {h: 0, g: g, f: g}))
+
+        while (!final && open.length) {
+          const next = open.reduce((a, b, i) => {
+            if (b.f < a.f || a.f === null || (b.f === a.f && b.h < a.h)) {
+              a.f = b.f
+              a.h = b.h
+              a.index = i
+            }
+            return a
+          }, { f: null, h: 0, index: null })
+
+          const nextV = open[next.index]
+          const neighbors = nextV.neighbors
+            .filter(n => !_.find({ index: n }, closed))
+            .filter(n => !_.find({ index: n }, open))
+            .map(n => {
+              const h = nextV.h + 1
+              const g = mdistance(vertices[n], to)
+              return _.assign(vertices[n], {h: h, g: g, f: h + g, p: nextV.index})
+            })
+            .filter(n => n.walkable)
+
+          closed.push(nextV)
+          open =  _.concat(neighbors, _.filter((v) => v.index !== nextV.index, open))
+          final = _.find({ index: to.index}, open)
+        }
+        function getPath (indexes) {
+          const path = Array.isArray(indexes) ? indexes : [indexes]
+          const index = path[path.length - 1]
+          const v = _.find({ index: index }, closed) || _.find({ index: index }, open)
+          if (v && v.p !== null && v.p !== undefined) {
+            path.push(v.p)
+            return getPath(path)
+          }
+          return path
+        }
+        if(!final) console.log('no path')
+        const t1 = performance.now();
+        console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.")
+        return final ? getPath(final.index) : []
+      }
+
+
+      function mdistance (from, to) {
+        return Math.abs(from.x - to.x) + Math.abs(from.y - to.y)
+      }
+
+
+    </script>
+  </body>
+</html>

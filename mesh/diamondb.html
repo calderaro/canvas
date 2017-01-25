@@ -1,0 +1,80 @@
+<html>
+  <body>
+    <script type="text/javascript" src='../lodash.min.js'></script>
+    <script type="text/javascript">
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      canvas.width = 640
+      canvas.height = 640
+      document.body.appendChild(canvas)
+
+      const mesh = function (w, h) {
+        this.vertices = {}
+        this.edges = {}
+        this.width = w
+        this.height = h
+        this.nodeWidth = 32
+        this.nodeHeight= 32
+
+        for(let y = 0; y <= this.height - 1; y++) {
+          for(let x = 0; x <= this.width - 1; x++) {
+            const nx = x * this.nodeWidth
+            const ny = y * this.nodeHeight
+            const v1 = { id: '' + (nx + 16) + ny, x: nx + 16, y: ny, walkable: true}
+            const v2 = { id: '' + (nx + this.nodeWidth) + (ny + 16), x: nx + this.nodeWidth, y: ny + 16, walkable: true}
+            const v3 = { id: '' + (nx + 16) + (ny + this.nodeHeight), x: nx + 16, y: ny + this.nodeHeight, walkable: true}
+            const v4 = { id: '' + nx + (ny + 16), x: nx, y: ny + 16, walkable: true}
+            this.vertices = _.assign(this.vertices, {
+              [v1.id]: v1,
+              [v2.id]: v2,
+              [v3.id]: v3,
+              [v4.id]: v4,
+            })
+          }
+        }
+
+        _.values(this.vertices).forEach((vertex , i) => {
+          _.values(this.vertices)
+            .filter(v => (v.x <= vertex.x +32 && v.x >= vertex.x - 32 && v.y >= vertex.y - 32 && v.y <= vertex.y + 32))
+            .filter(v => !(v.x === vertex.x - 32 && v.y === vertex.y - 32))
+            .filter(v => !(v.x === vertex.x + 32 && v.y === vertex.y + 32))
+            .filter(v => !(v.x === vertex.x - 32 && v.y === vertex.y + 32))
+            .filter(v => !(v.x === vertex.x + 32 && v.y === vertex.y - 32))
+            .forEach(v => {
+              this.edges = _.assign(this.edges, {
+                [vertex.id + v.id]: { from: vertex.id, to: v.id }
+              })
+            })
+        })
+      }
+
+
+      const mesh1 = new mesh(10, 10)
+      console.log(mesh1)
+      console.log(Object.keys(mesh1.vertices).length)
+      console.log(Object.keys(mesh1.edges).length)
+
+      function draw (delta) {
+        ctx.clearRect(0, 0, 640, 640)
+        ctx.fillStyle = 'black'
+        ctx.fillRect(0, 0, 640, 640)
+
+        _.values(mesh1.edges).forEach((e, i) => {
+          if(!mesh1.vertices[e.from].walkable || !mesh1.vertices[e.to].walkable) return
+          ctx.strokeStyle="rgba(46, 154, 254, 0.5)";
+          ctx.beginPath()
+          ctx.moveTo(mesh1.vertices[e.from].x, mesh1.vertices[e.from].y )
+          ctx.lineTo(mesh1.vertices[e.to].x , mesh1.vertices[e.to].y )
+          ctx.stroke()
+        })
+        _.values(mesh1.vertices).forEach(v => {
+          ctx.fillStyle = '#FAAC58'
+          ctx.fillRect(v.x -2, v.y -2 , 4, 4)
+        })
+        requestAnimationFrame(draw)
+      }
+      requestAnimationFrame(draw)
+
+    </script>
+  </body>
+</html>

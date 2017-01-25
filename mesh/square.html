@@ -1,0 +1,95 @@
+<html>
+  <body>
+    <script type="text/javascript" src='../lodash.min.js'></script>
+    <script type="text/javascript">
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      canvas.width = 640
+      canvas.height = 640
+      document.body.appendChild(canvas)
+
+      const mesh = function (w, h, nd) {
+        this.vertices = []
+        this.edges = []
+        this.width = w
+        this.height = h
+        this.nodeDimesion = nd
+
+        for(let y = 0; y <= this.height - 1; y++) {
+          for(let x = 0; x <= this.width - 1; x++) {
+            const nx = x * this.nodeDimesion
+            const ny = y * this.nodeDimesion
+            const v1 = { id: '' + nx + ny, x: nx, y: ny, walkable: true }
+            this.vertices.push(v1)
+          }
+        }
+        for(let y = 0; y < this.height; y++) {
+          for(let x = 0; x < this.width; x++) {
+            const x0 = this.vertices[x + this.width * y]
+            const x1 = this.vertices[(x + 1) + this.width * y] || null
+            const x2 = this.vertices[(x) + this.width * (y - 1)] || null
+            const x3 = this.vertices[(x) + this.width * (y + 1)] || null
+            const x4 = this.vertices[(x - 1) + this.width * y] || null
+            const x5 = this.vertices[(x - 1) + this.width * (y - 1)] || null
+            const x6 = this.vertices[(x + 1) + this.width * (y + 1)] || null
+            const x7 = this.vertices[(x - 1) + this.width * (y + 1)] || null
+            const x8 = this.vertices[(x + 1) + this.width * (y - 1)] || null
+
+            if (x1 && x !== this.width - 1) {
+              this.edges.push({ from: x + this.width * y, to: (x + 1) + this.width * y })
+            }
+            if (x2) {
+              this.edges.push({ from: x + this.width * y, to: (x) + this.width * (y - 1) })
+            }
+            if (x3) {
+              this.edges.push({ from: x + this.width * y, to: (x) + this.width * (y + 1) })
+            }
+            if (x4 && x !== 0) {
+              this.edges.push({ from: x + this.width * y, to: (x - 1) + this.width * y })
+            }
+            if (x5 && x !== 0) {
+              this.edges.push({ from: x + this.width * y, to: (x - 1) + this.width * (y - 1) })
+            }
+            if (x6 && x !== this.width - 1) {
+              this.edges.push({ from: x + this.width * y, to: (x + 1) + this.width * (y + 1) })
+            }
+            if (x7 && x !== 0) {
+              this.edges.push({ from: x + this.width * y, to: (x - 1) + this.width * (y + 1) })
+            }
+            if (x8 && x !== this.width - 1) {
+              this.edges.push({ from: x + this.width * y, to: (x + 1) + this.width * (y - 1) })
+            }
+          }
+        }
+      }
+
+      const center = [16,16]
+      const mesh1 = new mesh(20, 20, 32)
+      console.log(mesh1)
+      console.log(Object.keys(mesh1.vertices).length)
+      console.log(Object.keys(mesh1.edges).length)
+
+      function draw (delta) {
+        ctx.clearRect(0, 0, 640, 640)
+        ctx.fillStyle = 'black'
+        ctx.fillRect(0, 0, 640, 640)
+
+        mesh1.edges.forEach((e, i) => {
+          if(!mesh1.vertices[e.from].walkable || !mesh1.vertices[e.to].walkable) return
+          ctx.strokeStyle="rgba(46, 154, 254, 0.5)";
+          ctx.beginPath()
+          ctx.moveTo(mesh1.vertices[e.from].x + 2 + center[0], mesh1.vertices[e.from].y + 2 + center[1])
+          ctx.lineTo(mesh1.vertices[e.to].x + 2 + center[0], mesh1.vertices[e.to].y + 2 + center[1])
+          ctx.stroke()
+        })
+        mesh1.vertices.forEach(v => {
+          ctx.fillStyle = '#FAAC58'
+          ctx.fillRect(v.x + center[0] , v.y + center[1] , 4, 4)
+        })
+        requestAnimationFrame(draw)
+      }
+      requestAnimationFrame(draw)
+
+    </script>
+  </body>
+</html>

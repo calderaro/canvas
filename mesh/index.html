@@ -1,0 +1,103 @@
+<html>
+  <body>
+    <script type="text/javascript">
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      canvas.width = 640
+      canvas.height = 640
+      document.body.appendChild(canvas)
+
+      const mesh = function (ctx, w, h, nw, nh) {
+        this.vertices = []
+        this.edges = []
+        this.width = w
+        this.height = h
+        this.nodeWidth = nw
+        this.nodeHeight= nh
+
+        for(let y = 0; y <= this.height / this.nodeHeight - 1; y++) {
+          for(let x = 0; x <= this.width / this.nodeWidth - 1; x++) {
+            const nx = x * this.nodeWidth
+            const ny = y * this.nodeHeight
+            this.vertices.push({ x: nx, y: ny, walkable: y === 2 && x === 2 ? false : true})
+          }
+        }
+        for(let y = 0; y <= this.height / this.nodeHeight - 1; y++) {
+          for(let x = 0; x <= this.width / this.nodeWidth - 1; x++) {
+            const tilesperrow = this.height / this.nodeHeight
+            const x0 = this.vertices[x + tilesperrow * y]
+            const x1 = this.vertices[(x + 1) + tilesperrow * y] || null
+            const x2 = this.vertices[(x) + tilesperrow * (y - 1)] || null
+            const x3 = this.vertices[(x) + tilesperrow * (y + 1)] || null
+            const x4 = this.vertices[(x - 1) + tilesperrow * y] || null
+            const x5 = this.vertices[(x - 1) + tilesperrow * (y - 1)] || null
+            const x6 = this.vertices[(x + 1) + tilesperrow * (y + 1)] || null
+            const x7 = this.vertices[(x - 1) + tilesperrow * (y + 1)] || null
+            const x8 = this.vertices[(x + 1) + tilesperrow * (y - 1)] || null
+
+            if (x1 && x !== this.width / this.nodeWidth - 1) {
+              this.edges.push({ from: x + tilesperrow * y, to: (x + 1) + tilesperrow * y })
+            }
+            if (x2) {
+              this.edges.push({ from: x + tilesperrow * y, to: (x) + tilesperrow * (y - 1) })
+            }
+            if (x3) {
+              this.edges.push({ from: x + tilesperrow * y, to: (x) + tilesperrow * (y + 1) })
+            }
+            if (x4 && x !== 0) {
+              this.edges.push({ from: x + tilesperrow * y, to: (x - 1) + tilesperrow * y })
+            }
+            if (x5 && x !== 0) {
+              this.edges.push({ from: x + tilesperrow * y, to: (x - 1) + tilesperrow * (y - 1) })
+            }
+            if (x6 && x !== this.width / this.nodeWidth - 1) {
+              this.edges.push({ from: x + tilesperrow * y, to: (x + 1) + tilesperrow * (y + 1) })
+            }
+            if (x7 && x !== 0) {
+              this.edges.push({ from: x + tilesperrow * y, to: (x - 1) + tilesperrow * (y + 1) })
+            }
+            if (x8 && x !== this.width / this.nodeWidth - 1) {
+              this.edges.push({ from: x + tilesperrow * y, to: (x + 1) + tilesperrow * (y - 1) })
+            }
+          }
+        }
+        this.rotate = function (angle) {
+          const radians = (Math.PI / 180) * angle
+          const cos = Math.cos(radians)
+          const sin = Math.sin(radians)
+          return this.vertices.map(v => {
+            v.x = v.x * cos - v.y * sin
+            v.y = v.x * sin + v.y * cos
+            return v
+          })
+        }
+      }
+
+
+      const mesh1 = new mesh(ctx, 8000, 8000, 32, 32)
+      console.log(mesh1)
+
+      function draw (delta) {
+        ctx.clearRect(0, 0, 640, 640)
+        ctx.fillStyle = 'black'
+        ctx.fillRect(0, 0, 640, 640)
+
+        mesh1.edges.forEach((e, i) => {
+          if(!mesh1.vertices[e.from].walkable || !mesh1.vertices[e.to].walkable) return
+          ctx.strokeStyle="rgba(46, 154, 254, 0.5)";
+          ctx.beginPath()
+          ctx.moveTo(mesh1.vertices[e.from].x + 16, mesh1.vertices[e.from].y + 16)
+          ctx.lineTo(mesh1.vertices[e.to].x + 16, mesh1.vertices[e.to].y + 16)
+          ctx.stroke()
+        })
+        mesh1.vertices.forEach(v => {
+          ctx.fillStyle = '#FAAC58'
+          ctx.fillRect(v.x + 16 -2, v.y + 16 -2 , 4, 4)
+        })
+        requestAnimationFrame(draw)
+      }
+      requestAnimationFrame(draw)
+
+    </script>
+  </body>
+</html>
